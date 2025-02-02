@@ -1,4 +1,4 @@
-# Komgo library-Service test
+# Komgo Library-Service test
 
 A library-service to manage library : 
 

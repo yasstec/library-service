@@ -52,7 +52,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_GetBooks() {
+    void should_getBooks() {
         //given
         when(libraryRepository.getBooks()).thenReturn(Set.of(book));
         //when
@@ -64,7 +64,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_AddBook() {
+    void should_addBook() {
         //given
         when(libraryRepository.saveBook(any(Book.class))).thenReturn(book);
         //when
@@ -75,34 +75,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_throws_UserNotFound_when_BorrowBook() {
-        //given
-        when(userRepository.getUserById(userId)).thenReturn(Optional.empty());
-        //when then
-        assertThrows(ObjectNotFoundException.class, () -> libraryService.borrowBook(userId, bookId));
-    }
-
-    @Test
-    void should_throws_BookNotFound_when_BorrowBook() {
-        //given
-        when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
-        when(libraryRepository.getBookById(bookId)).thenReturn(Optional.empty());
-        //when then
-        assertThrows(ObjectNotFoundException.class, () -> libraryService.borrowBook(userId, bookId));
-    }
-
-    @Test
-    void should_not_BorrowBook_when_BookAlreadyBorrowed() {
-        //given
-        when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
-        when(libraryRepository.getBookById(bookId)).thenReturn(Optional.of(book));
-        when(libraryRepository.getBorrowingByBookId(bookId)).thenReturn(Optional.of(borrowing));
-        //when then
-        assertThrows(UnsupportedOperationException.class, () -> libraryService.borrowBook(userId, bookId));
-    }
-
-    @Test
-    void should_throws_BookNotBorrowed_when_BorrowBook() {
+    void should_borrowBook() {
         //given
         when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
         when(libraryRepository.getBookById(bookId)).thenReturn(Optional.of(book));
@@ -117,7 +90,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_GetBorrowedBooksByUser() {
+    void should_getBorrowedBooks_byUser() {
         //given
         when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
         when(libraryRepository.getBorrowingByUserId(userId)).thenReturn(Set.of(borrowing));
@@ -130,7 +103,26 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_throws_UserNotFound_when_GetBorrowedBooksByUser() {
+    void should_throws_ObjectNotFoundException_when_borrow_missing_book() {
+        //given
+        when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
+        when(libraryRepository.getBookById(bookId)).thenReturn(Optional.empty());
+        //when then
+        assertThrows(ObjectNotFoundException.class, () -> libraryService.borrowBook(userId, bookId));
+    }
+
+    @Test
+    void should_not_BorrowBook_when_bookAlreadyBorrowed() {
+        //given
+        when(userRepository.getUserById(userId)).thenReturn(Optional.of(user));
+        when(libraryRepository.getBookById(bookId)).thenReturn(Optional.of(book));
+        when(libraryRepository.getBorrowingByBookId(bookId)).thenReturn(Optional.of(borrowing));
+        //when then
+        assertThrows(UnsupportedOperationException.class, () -> libraryService.borrowBook(userId, bookId));
+    }
+
+    @Test
+    void should_throws_ObjectNotFoundException_when_getBorrowedBooks_user_notFound() {
         //given
         when(userRepository.getUserById(userId)).thenReturn(Optional.empty());
         // when then
@@ -138,7 +130,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_ReturnBorrowedBook() {
+    void should_returnBorrowedBook() {
         //given
         when(libraryRepository.getBorrowingById(any(UUID.class))).thenReturn(Optional.of(borrowing));
         var returnDate = Instant.now();
@@ -152,7 +144,7 @@ class LibraryServiceTest {
     }
 
     @Test
-    void should_throws_BorrowingNotFound_when_ReturnBorrowedBook() {
+    void should_throws_ObjectNotFoundException_when_return_missing_borrowedBook() {
         //given
         when(libraryRepository.getBorrowingById(any(UUID.class))).thenReturn(Optional.empty());
         //when then
