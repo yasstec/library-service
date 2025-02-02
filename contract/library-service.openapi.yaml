@@ -1,0 +1,373 @@
+openapi: 3.0.3
+info:
+  title: library-service
+  description: Microservice to manage library (books and Book borrowing)
+  version: 1.0.0-SNAPSHOT
+  contact:
+    name: Yassine Abainou
+    email: y.abainou@gmail.com
+servers:
+  - url: http://localhost:8085
+    description: local development
+tags:
+  - name: "library"
+    description: "Restful endpoints to manage library books"
+  - name: "user"
+    description: "Restful endpoints to manage users"
+paths:
+  /api/v1/books:
+    post:
+      summary: Add a new book to the catalog
+      tags: [library]
+      operationId: addNewBook
+      requestBody:
+        description: Request to add a new book
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreationRequest'
+      responses:
+        201:
+          description:
+            Book created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      summary: Get list books
+      tags: [ library ]
+      operationId: getBooks
+      responses:
+        200:
+          description:
+            List of saved books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/borrowings:
+    post:
+      summary: Borrow a book
+      tags: [ library ]
+      operationId: borrowBook
+      requestBody:
+        description: Request to borrow a book by bookId and userId
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BorrowRequest'
+      responses:
+        201:
+          description:
+            Borrowing created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Borrowing'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get list borrowed books
+      tags: [ library ]
+      operationId: getBorrowedBooks
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: filter by user id
+          schema:
+            type: string
+            format: uuid
+            minLength: 3
+      responses:
+        200:
+          description:
+            List of borrowed books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Borrowing'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/borrowings/{id}/return:
+    put:
+      summary: return a borrowed book
+      tags: [ library ]
+      operationId: returnBook
+      parameters:
+        - name: id
+          in: path
+          description: booking id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Request to return a borrowed book
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+      responses:
+        200:
+          description:
+            Borrowing updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Borrowing'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/users:
+    post:
+      summary: Add a new user
+      tags: [ user ]
+      operationId: addUser
+      requestBody:
+        description: Request to add a new user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreationRequest'
+      responses:
+        201:
+          description:
+            User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    gameId:
+      name: id
+      in: path
+      description: id of the game.
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 10
+  schemas:
+    BookCreationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: book title
+          minLength: 3
+        reference:
+          type: string
+          description: optional book reference
+          minLength: 3
+        catalog:
+          type: string
+          description: optional catalog number
+          minLength: 1
+        description:
+          type: string
+          description: optional book description
+          minLength: 1
+      required:
+        - title
+    Book:
+      type: object
+      properties:
+        title:
+          type: string
+          description: book title
+        id:
+          type: string
+          description: book id
+    BorrowRequest:
+      type: object
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: book id
+          minLength: 3
+        userId:
+          type: string
+          format: uuid
+          description: user id
+          minLength: 3
+        borrowDate:
+          type: string
+          description: borrow Date
+        returnDate:
+          type: string
+          description: return Date
+      required:
+        - bookId
+        - userId
+    ReturnRequest:
+      type: object
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: book id
+          minLength: 3
+        userId:
+          type: string
+          format: uuid
+          description: user id
+          minLength: 3
+        returnDate:
+          type: string
+          description: return Date
+      required:
+        - bookId
+        - userId
+    Borrowing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: borrowing id
+        bookId:
+          type: string
+          format: uuid
+          description: book id
+        userId:
+          type: string
+          format: uuid
+          description: book id
+        title:
+          type: string
+          description: book title
+        borrowDate:
+          type: string
+          description: borrow Date
+        returnDate:
+          type: string
+          description: return Date
+    UserCreationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: user full name
+          minLength: 3
+      required:
+        - name
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: user id
+        name:
+          type: string
+          description: user full name
+    ApiError:
+      description: Functional error due to client usage.
+      type: object
+      properties:
+        key:
+          description: Error key. Can be used as key for i18n.
+          type: string
+        message:
+          description: Error message.
+          type: string
+        parameters:
+          description: Error message contextual parameters (if any).
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiErrorParameter"
+      example: { key: "my-service.error.bad-parameter-value", "message": "The value [${paramValue}] is forbidden for parameter [${paramName}].",  parameters: [ { "name": "paramName", "value": "MyParameter" }, { "name": "paramValue", "value": "my value" } ] }
+    ApiErrorParameter:
+      description: Error message parameter.
+      type: object
+      properties:
+        name:
+          description: Parameter name.
+          type: string
+        value:
+          description: Parameter value.
+          type: string
+    ServerError:
+      description: Technical error due to server/producer code or infrastructure issue.
+      type: object
+      properties:
+        message:
+          description: Error message.
+          type: string
+      example: { "message": "Nullpointer" }
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Forbidden:
+      description: Forbidden access because of missing authorization.
+    InternalServerError:
+      description: Technical error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServerError'
+    Unauthorized:
+      description: Unauthorized access without valid authentication.

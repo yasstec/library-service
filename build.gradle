@@ -1,0 +1,147 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.4'
+    id 'org.openapi.generator' version '7.1.0'
+    id 'io.freefair.lombok' version '8.6'
+    id 'io.gatling.gradle' version '3.10.5'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.test'
+version = '1.0.0-SNAPSHOT'
+
+/*
+// Define the JDK version
+def jdkVersion = JavaVersion.VERSION_21
+java {
+    sourceCompatibility = jdkVersion
+    targetCompatibility = jdkVersion
+}
+*/
+
+sourceSets {
+    main.java.srcDirs = ['src/main/java']
+
+    create("integrationTest") {
+        java.srcDir("src/integration-test/java")
+        resources.srcDir("src/integration-test/resources")
+        compileClasspath += sourceSets["main"].output + configurations["testRuntimeClasspath"]
+        runtimeClasspath += output + compileClasspath + sourceSets["test"].runtimeClasspath
+    }
+
+    create("systemTest") {
+        java.srcDir("src/system-test/java")
+        resources.srcDir("src/system-test/resources")
+        compileClasspath += sourceSets["main"].output + configurations["testRuntimeClasspath"]
+        runtimeClasspath += output + compileClasspath + sourceSets["test"].runtimeClasspath
+    }
+
+    gatling {
+        scala.srcDir "src/perf-test/scala"
+        resources.srcDir "src/perf-test/resources"
+    }
+
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+/*  Begin of openapi config */
+def openapiOutputDir = "${layout.buildDirectory.asFile.get().path}/generated-api"
+sourceSets.main.java {
+    srcDir("${openapiOutputDir}/src/main/java")
+}
+def openApiFilename = "${rootDir}/contract/library-service.openapi.yaml"
+def openapiGenerationBasePackage = "com.test.service.library_service"
+def openapiConfigOptions = [
+        "openApiNullable": "true",
+        "dateLibrary": "java8",
+        "useOptional": "true",
+        "hideGenerationTimestamp": "true",
+        "interfaceOnly": "true",
+        "useTags": "true",
+        "swaggerDocketConfig": "false",
+        "swaggerAnnotations": "false",
+        "apiFirst": "false",
+        "configPackage": "${openapiGenerationBasePackage}.config",
+        "basePackage": openapiGenerationBasePackage,
+        "useSpringController": "false",
+        "useSpringBoot3": "true",
+]
+def openapiAdditionalProperties = [
+        "useSpringSecuredAnnotation": "true",
+        "useSpringPreauthorizeAnnotation": "true",
+]
+openApiGenerate {
+    generatorName.set("spring")
+    library.set("spring-cloud")
+    inputSpec.set(openApiFilename)
+    outputDir.set(openapiOutputDir)
+    apiPackage.set("${openapiGenerationBasePackage}.api.endpoint")
+    invokerPackage.set("${openapiGenerationBasePackage}.config")
+    modelPackage.set("${openapiGenerationBasePackage}.api.dto")
+    generateModelTests.set(false)
+    generateApiTests.set(false)
+    modelNameSuffix.set("dto")
+    configOptions.set(openapiConfigOptions)
+    additionalProperties.set(openapiAdditionalProperties)
+}
+
+tasks.compileJava.dependsOn(tasks.openApiGenerate)
+/*  End of openapi config */
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    compileOnly 'org.slf4j:slf4j-api:2.0.12'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.21'
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+
+    systemTestImplementation 'com.intuit.karate:karate-junit5:1.4.1'
+    systemTestImplementation 'org.testcontainers:testcontainers:1.18.0'
+    systemTestImplementation 'org.testcontainers:junit-jupiter:1.18.0'
+
+    gatlingImplementation 'com.intuit.karate:karate-gatling:1.4.1'
+    gatlingImplementation 'io.gatling:gatling-app:3.9.5'
+    gatlingImplementation 'io.gatling:gatling-recorder:3.9.5'
+    gatlingImplementation 'io.gatling.highcharts:gatling-charts-highcharts:3.9.5'
+    compileOnly 'org.scala-lang:scala-library:2.13.12'
+}
+
+tasks.register('integrationTest', Test) {
+    description = "Runs the integration tests"
+    group = "verification"
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    mustRunAfter tasks.test
+    useJUnitPlatform()
+}
+
+tasks.register('systemTest', Test) {
+    description = "Runs the system tests"
+    group = "verification"
+    testClassesDirs = sourceSets.systemTest.output.classesDirs
+    classpath = sourceSets.systemTest.runtimeClasspath
+    mustRunAfter tasks.test
+    useJUnitPlatform()
+}

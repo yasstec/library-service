@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: library-service
+
+logging:
+  level:
+    root: ERROR
+    org.springframework: ERROR
+    org.springframework.boot.web.embedded.TomcatWebServer: INFO
+    com.test: INFO
+
+server:
+  port: 8085
+  ssl:
+    enabled: false
